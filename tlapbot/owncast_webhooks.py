@@ -1,3 +1,4 @@
+import re
 from flask import Flask, request, json, Blueprint, current_app
 from tlapbot.db import get_db
 from tlapbot.owncast_requests import send_chat
@@ -7,6 +8,7 @@ from tlapbot.help_message import send_help
 from tlapbot.redeems_handler import handle_redeem
 
 
+tag_cleaner = re.compile('<.*?>')
 bp = Blueprint('owncast_webhooks', __name__)
 
 
@@ -32,26 +34,29 @@ def owncast_webhook():
             remove_duplicate_usernames(db, user_id, new_name)
     elif data["type"] == "CHAT":
         if not current_app.config['PASSIVE']:
+            message = re.sub(tag_cleaner, '', data["eventData"]["body"])
             prefix = current_app.config['PREFIX']
             user_id = data["eventData"]["user"]["id"]
             display_name = data["eventData"]["user"]["displayName"]
             current_app.logger.debug(f'New chat message from {display_name}:')
-            current_app.logger.debug(f'{data["eventData"]["body"]}')
-            if data["eventData"]["body"].startswith(f"{prefix}help"):
+            #current_app.logger.debug(f'{data["eventData"]["body"]}')
+            current_app.logger.debug(f'{message}!')
+            if message.startswith(f"{prefix}help"):
                 send_help()
-            elif data["eventData"]["body"].startswith(f"{prefix}points"):
+            elif message.startswith(f"{prefix}points"):
                 points = read_users_points(db, user_id)
                 if points is None:
                     send_chat("Error reading points.")
                 else:
                     send_chat(f"{display_name}'s points: {points}")
-            elif data["eventData"]["body"].startswith(f"{prefix}name_update"):
+            elif message.startswith(f"{prefix}name_update"):
                 # Forces name update in case bot didn't catch the NAME_CHANGE
                 # event. Also removes saved usernames from users with same name
                 # if user is authenticated.
                 change_display_name(db, user_id, display_name)
                 if data["eventData"]["user"]["authenticated"]:
                     remove_duplicate_usernames(db, user_id, display_name)
-            elif data["eventData"]["body"].startswith(prefix):
-                handle_redeem(data["eventData"]["body"], user_id)
+            elif message.startswith(prefix):
+                authenticated = data["eventData"]["user"]["authenticated"]
+                handle_redeem(message, user_id, display_name, authenticated)
     return data

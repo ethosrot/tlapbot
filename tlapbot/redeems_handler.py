@@ -1,12 +1,12 @@
 from flask import current_app
 from tlapbot.db import get_db
-from tlapbot.owncast_requests import send_chat
+from tlapbot.owncast_requests import send_chat, send_system_message
 from tlapbot.redeems import (add_to_redeem_queue, add_to_counter, add_to_milestone, 
         check_apply_milestone_completion, milestone_complete, is_redeem_active)
 from tlapbot.owncast_helpers import use_points, read_users_points, remove_emoji
 
 
-def handle_redeem(message, user_id):
+def handle_redeem(message, user_id, user_name, authenticated):
     split_message = message[1:].split(maxsplit=1)
     redeem = split_message[0]
     if len(split_message) == 1:
@@ -15,10 +15,15 @@ def handle_redeem(message, user_id):
         note = split_message[1]
 
     if redeem not in current_app.config['REDEEMS']:
-        send_chat("Can't redeem, redeem not found.")
+        # bypassed - if it's not a real redeem, don't answer at all.
+        # send_chat("Can't redeem, redeem not found.")
         return
     if not is_redeem_active(redeem):
-        send_chat("Can't redeem, redeem is currently not active.")
+        # bypassed - if it's not active, don't even acknowledge it.
+        # send_chat("Can't redeem, redeem is currently not active.")
+        return
+    if not authenticated:
+        send_chat(f"You must be authenticated to use channel actions!")
         return
 
     db = get_db()
@@ -36,7 +41,7 @@ def handle_redeem(message, user_id):
         elif int(note) > points:
             send_chat(f"Can't redeem {redeem}, you're donating more points than you have.")
         elif add_to_milestone(db, user_id, redeem, int(note)):
-            send_chat(f"Succesfully donated to {redeem} milestone!")
+            send_chat(f"**{user_name}** succesfully donated to the **{redeem}** milestone!")
             if check_apply_milestone_completion(db, redeem):
                 send_chat(f"Milestone goal {redeem} complete!")
         else:
@@ -51,13 +56,13 @@ def handle_redeem(message, user_id):
 
     if redeem_type == "counter":
         if add_to_counter(db, redeem) and use_points(db, user_id, price):
-            send_chat(f"{redeem} redeemed for {price} points.")
+            send_system_message(f"**{user_name}** redeemed **{redeem}** for {price} points.")
         else:
             send_chat(f"Redeeming {redeem} failed.")
     elif redeem_type == "list":
         if (add_to_redeem_queue(db, user_id, redeem) and
                 use_points(db, user_id, price)):
-            send_chat(f"{redeem} redeemed for {price} points.")
+            send_system_message(f"**{user_name}** redeemed **{redeem}** for {price} points.")
         else:
             send_chat(f"Redeeming {redeem} failed.")
     elif redeem_type == "note":
@@ -66,7 +71,7 @@ def handle_redeem(message, user_id):
             return
         if (add_to_redeem_queue(db, user_id, redeem, remove_emoji(note)) and
                 use_points(db, user_id, price)):
-            send_chat(f"{redeem} redeemed for {price} points.")
+            send_system_message(f"**{user_name}** redeemed **{redeem}** for {price} points.")
         else:
             send_chat(f"Redeeming {redeem} failed.")
     else:

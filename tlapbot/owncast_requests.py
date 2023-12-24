@@ -46,3 +46,17 @@ def send_chat(message):
         return
     return r.json()
 
+def send_system_message(message):
+    url = current_app.config['OWNCAST_INSTANCE_URL'] + '/api/integrations/chat/system'
+    headers = {"Authorization": "Bearer " + current_app.config['OWNCAST_ACCESS_TOKEN']}
+    try:
+        r = requests.post(url, headers=headers, json={"body": message})
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Error occured sending chat message: {e.args[0]}")
+        return
+    if r.status_code != 200:
+        current_app.logger.error(f"Error occured when sending chat: Response code not 200.")
+        current_app.logger.error(f"Response code received: {r.status_code}.")
+        current_app.logger.error(f"Check owncast instance url and access key.")
+        return
+    return r.json()

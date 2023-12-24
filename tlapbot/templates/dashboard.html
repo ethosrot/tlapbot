@@ -10,26 +10,20 @@
     <script src="/static/dashboard.js"></script>
 
     <div class="tab">
-        <button class="tablinks" onclick="openTab(event, 'dashboard')" , id="defaultOpen">Tlapbot dashboard</button>
+        <button class="tablinks" onclick="openTab(event, 'dashboard')" , id="defaultOpen">Dashboard</button>
         {% if not passive %}
         {% if queue %}
-        <button class="tablinks" onclick="openTab(event, 'redeem-queue')">Redeem queue</button>
+        <button class="tablinks" onclick="openTab(event, 'history')">Redeem History</button>
         {% endif %}
-        <button class="tablinks" onclick="openTab(event, 'redeems-list')">Redeems help</button>
         {% endif %}
     </div>
 
     <div id='dashboard' class="tabcontent">
 
         <body>
-            <h3>Redeems Dashboard</h3>
-            {% if (username and users ) %}
+            {% if (username and users) %}
+            <h3>Current Point Balance:</h3>
             <table>
-                <thead>
-                    <tr>
-                        <th>Your points balance</th>
-                    </tr>
-                </thead>
                 {% for user in users %}
                 <tbody>
                     <td> {{ user[0] }} </td>
@@ -45,6 +39,38 @@
             {% endif %}
 
             {% if not passive %}
+            {% if redeems %}
+            <h3>Available Redemptions:</h3>
+            <p>If you have enough points, you can redeem the below commands in chat!</p>
+            <ul>
+                <li><strong>List</strong> redeems are simple actions.</li>
+                <li><strong>Note</strong> redeems require a message after the command.</li>
+            </ul>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Redeem</th>
+                        <th>Price</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                {% for redeem, redeem_info in redeems.items() %}
+                <tbody>
+                    <td>{{ prefix }}{{ redeem }}</td>
+                    {% if redeem_info["type"] == "milestone" %}
+                    <td></td>
+                    {% else %}
+                    <td>{{ redeem_info["price"] }}</td>
+                    {% endif %}
+                    <td>{{ redeem_info["type"] }}</td>
+                    {% if redeem_info["info"] %}
+                    <td>{{ redeem_info["info"] }}</td>
+                    {% endif %}
+                </tbody>
+                {% endfor %}
+            </table>
+            {% endif %}
             {% if counters %}
             <table>
                 <thead>
@@ -81,7 +107,7 @@
         </body>
     </div>
 
-    <div id='redeem-queue' class="tabcontent">
+    <div id='history' class="tabcontent">
 
         <body>
             <h3>Redeems Queue</h3>
@@ -106,47 +132,6 @@
                     <td>{{ row[3] }}</td>
                     {% if row[2] %}
                     <td>{{ row[2] }}</td>
-                    {% endif %}
-                </tbody>
-                {% endfor %}
-            </table>
-            {% endif %}
-        </body>
-    </div>
-
-    <div id='redeems-list' class="tabcontent">
-        <h3>Currently active redeems</h3>
-        <p>If you have enough points, you can redeem those redeems by typing the command in chat.</p>
-        <ul>
-            <li><strong>Counter</strong> redeems add +1 to their counter.</li>
-            <li><strong>List</strong> redeems get added to the list of recent redeems (without a note).</li>
-            <li><strong>Note</strong> redeems require you to send a message together with the redeem.</li>
-            <li><strong>Milestone</strong> redeems are long-term goals to which you can donate any amount of points you
-                want. They will be completed once the amount of points donated reaches the goal.</li>
-        </ul>
-
-        <body>
-            {% if redeems %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Redeem</th>
-                        <th>Price</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                {% for redeem, redeem_info in redeems.items() %}
-                <tbody>
-                    <td>{{ prefix }}{{ redeem }}</td>
-                    {% if redeem_info["type"] == "milestone" %}
-                    <td></td>
-                    {% else %}
-                    <td>{{ redeem_info["price"] }}</td>
-                    {% endif %}
-                    <td>{{ redeem_info["type"] }}</td>
-                    {% if redeem_info["info"] %}
-                    <td>{{ redeem_info["info"] }}</td>
                     {% endif %}
                 </tbody>
                 {% endfor %}
