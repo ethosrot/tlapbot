@@ -8,6 +8,9 @@ ARG GID=911
 RUN apk update
 RUN apk add bash
 
+RUN addgroup -g ${GID} ${SERVICE_NAME} \
+    && adduser -h /app -s /bin/false -D -G ${SERVICE_NAME} -u ${UID} ${SERVICE_NAME}
+
 RUN mkdir /app/instance
 RUN chown -R tlapbot. /app/instance
 WORKDIR /app
