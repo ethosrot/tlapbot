@@ -32,6 +32,9 @@ def create_app(test_config=None):
     app.config.from_pyfile(get_instance(app, 'config.py'), silent=True)
     app.config.from_pyfile(get_instance(app, 'redeems.py'), silent=True)
 
+    ## TODO Clean this up
+    app.config['APPLICATION_ROOT'] = '/tlapbot'
+
     # Make logging work for gunicorn-ran instances of tlapbot.
     if app.config['GUNICORN']:
         gunicorn_logger = logging.getLogger('gunicorn.error')
