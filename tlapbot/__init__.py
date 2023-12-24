@@ -1,10 +1,13 @@
 import os
 import logging
-from flask import Flask
+from flask import Flask, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
 from tlapbot.db import get_db
 from tlapbot.owncast_requests import is_stream_live, give_points_to_chat
 from tlapbot.redeems import remove_inactive_redeems 
+
+def get_instance(app, path):
+    return os.path.join(app.instance_path, path)
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -15,15 +18,19 @@ def create_app(test_config=None):
     except OSError:
         pass
 
+    @app.route("/api/status")
+    def get_online():
+        return jsonify({"status": "online"})
+
     # Prepare config: set db to instance folder, then load default, then
     # overwrite it with config.py and redeems.py
     app.config.from_mapping(
-        DATABASE=os.path.join(app.instance_path, "tlapbot.sqlite")
+        DATABASE=get_instance(app, "tlapbot.sqlite")
     )
     app.config.from_object('tlapbot.default_config')
     app.config.from_object('tlapbot.default_redeems')
-    app.config.from_pyfile('config.py', silent=True)
-    app.config.from_pyfile('redeems.py', silent=True)
+    app.config.from_pyfile(get_instance(app, 'config.py'), silent=True)
+    app.config.from_pyfile(get_instance(app, 'redeems.py'), silent=True)
 
     # Make logging work for gunicorn-ran instances of tlapbot.
     if app.config['GUNICORN']:
