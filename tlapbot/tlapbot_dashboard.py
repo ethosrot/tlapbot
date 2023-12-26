@@ -26,3 +26,17 @@ def dashboard():
                            username=username,
                            users=users,
                            utc_timezone=utc_timezone)
+
+## FIXME this should be moved during refactor
+@bp.route('/getPoints', methods=['GET'])
+def get_points():
+    db = get_db()
+    username = request.args.get("username")
+    if username is not None:
+        users = read_all_users_with_username(db, username)
+        if len(users) > 0:
+            print(len(users))
+            return str(users[0][1])
+        return "", 404
+    else:
+        return "", 400
